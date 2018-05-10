@@ -143,15 +143,22 @@ func ParseRows(rows *sql.Rows) ([]map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	//columnsType, err := columns.ColumnTypes()
-	//if err != nil {
-	//	return nil, err
-	//}
-	count := len(columns)
+	typeList, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	var columnsList []reflect.Type
+	for _, columnType := range typeList {
+		columnsList = append(columnsList, columnType.ScanType())
+		fmt.Println(columnType.Name())
+	}
+	fmt.Println(columnsList)
+
+	num := len(columns)
 	for rows.Next() {
 		var (
-			row    = make([][]byte, count)
-			rowptr = make([]interface{}, count)
+			row    = make([][]byte, num)
+			rowptr = make([]interface{}, num)
 		)
 		for idx, _ := range row {
 			rowptr[idx] = &row[idx]
@@ -159,7 +166,7 @@ func ParseRows(rows *sql.Rows) ([]map[string]interface{}, error) {
 		if err = rows.Scan(rowptr...); err != nil {
 			return nil, err
 		}
-		var result = make(map[string]interface{}, count)
+		var result = make(map[string]interface{}, num)
 		for idx, value := range row {
 			result[columns[idx]] = string(value)
 		}
@@ -195,7 +202,7 @@ func TableName(v interface{}) string {
 func CreateTableSQL(v interface{}) string {
 	var (
 		columns []string
-		tags reflect.StructTag
+		tags    reflect.StructTag
 	)
 	sql := "CREATE TABLE IF NOT EXISTS %s (%s) ENGINE=Innodb DEFAULT CHARSET=utf8;"
 	t := reflect.TypeOf(v).Elem()
@@ -204,15 +211,12 @@ func CreateTableSQL(v interface{}) string {
 		orm := tags.Get("orm")
 		comment := tags.Get("comment")
 		if comment != "" {
-			orm += fmt.Sprintf(" COMMENT '%s'",comment)
+			orm += fmt.Sprintf(" COMMENT '%s'", comment)
 		}
 		columns = append(columns, orm)
 	}
 	return fmt.Sprintf(sql, TableName(v), strings.Join(columns, ","))
 }
-
-
-
 
 func AddColumnSQL(tableName, tags string, offset ...string) string {
 	sql := "ALTER TABLE %s ADD COLUMN %s %s;"

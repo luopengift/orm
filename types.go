@@ -1,10 +1,9 @@
 package orm
 
 import (
-	"reflect"
+//	"reflect"
 )
 
 type Map map[string]interface{}
 type List []interface{}
-type Interface struct {}
-
+type Interface struct{}

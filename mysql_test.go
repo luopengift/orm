@@ -3,6 +3,7 @@ package orm
 import (
 	"fmt"
 	"github.com/luopengift/log"
+	//	"github.com/luopengift/types"
 	"testing"
 	"time"
 )
@@ -46,5 +47,14 @@ func Test_MySQL(t *testing.T) {
 	defer result.Close()
 
 	rest, err := ParseRows(result)
-	fmt.Println(rest, err)
+	fmt.Println("=>", rest, err)
+
+	for _, v := range rest {
+		log.Info("==> %#v", v)
+	}
+
+	//sql := SQL{}
+	//sql.Table("User").Where(map[string]interface{}{"name":"CLC"}).Columns("name", "age")
+	//fmt.Println(sql)
+
 }
