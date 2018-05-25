@@ -9,6 +9,13 @@ import (
 	"time"
 )
 
+var Engine = new(MySQL)
+
+func Init(dsn string) error {
+	return Engine.Init(dsn)
+}
+
+
 type MySQL struct {
 	*sql.DB
 }
@@ -27,10 +34,16 @@ func (mysql *MySQL) Init(dsn string) (err error) {
 	return
 }
 
-func (mysql *MySQL) CreateTable(v interface{}) (sql.Result, error) {
-	sql := CreateTableSQL(v)
-	fmt.Println(strings.Join(strings.Split(sql, ","), ",\n"))
-	return mysql.Exec(sql)
+func (mysql *MySQL) CreateTable(tables ...interface{}) (error) {
+	for _, v := range tables {
+		sql := CreateTableSQL(v)
+		fmt.Println(strings.Join(strings.Split(sql, ","), ",\n"))
+		if _, err := mysql.Exec(sql); err != nil {
+			return err
+		}
+	}
+	return nil
+
 }
 
 func (mysql *MySQL) DropTable(v interface{}) (sql.Result, error) {
@@ -204,7 +217,7 @@ func CreateTableSQL(v interface{}) string {
 		columns []string
 		tags    reflect.StructTag
 	)
-	sql := "CREATE TABLE IF NOT EXISTS %s (%s) ENGINE=Innodb DEFAULT CHARSET=utf8;"
+	sql := "CREATE TABLE IF NOT EXISTS %s (\n%s\n) ENGINE=Innodb DEFAULT CHARSET=utf8;"
 	t := reflect.TypeOf(v).Elem()
 	for i := 0; i < t.NumField(); i++ {
 		tags = t.Field(i).Tag
